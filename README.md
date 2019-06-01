@@ -14,12 +14,13 @@ The executing environment contains a valid AWS credentials profile and, if requi
 ### Usage
 
 4 shell scripts are used to execute the deployment. These scripts utilse Cloudformation and S3 client for uploading the static website
+
 Cloudformation scripts are stored in the folder cloudformation and the static website source is store in the ui folder
 
 The scripts need to executed in a specific order to satisfy stack dependancies:
 
 - create_fabric - initialises VPC, security groups, role and a public Load Balancer
-- create_databse - initialises a since MySQL RDS instance
+- create_databse - initialises a single MySQL RDS instance
 - create_api - initialise a ECS service and task using Fargate and registers it with the Load Balancer, output of script will supply the API URL
 - create_ui - initialise a static website S3 bucket and will sync the contents of the ui folder into this buckey, output of the script will supply the URL of the Website
 
