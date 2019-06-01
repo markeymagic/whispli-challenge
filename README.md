@@ -17,7 +17,7 @@ The executing environment contains a valid AWS credentials profile and, if requi
 
 Cloudformation scripts are stored in the folder cloudformation and the static website source is store in the ui folder
 
-The scripts need to executed in a specific order to satisfy stack dependancies:
+The scripts need to be executed in a specific order to satisfy stack dependancies:
 
 - create_fabric - initialises VPC, security groups, role and a public Load Balancer
 - create_databse - initialises a single MySQL RDS instance
