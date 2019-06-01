@@ -1,0 +1,6 @@
+#!/bin/sh
+
+echo "Creating fabric stack"
+aws cloudformation create-stack --stack-name whispli-fabric --capabilities CAPABILITY_IAM --template-body file://`pwd`/cloudformation/fabric.yml
+aws cloudformation wait stack-create-complete --stack-name whispli-fabric
+echo "Fabric stack ready"

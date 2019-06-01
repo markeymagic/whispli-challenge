@@ -1,0 +1,16 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: UI for whispili challenge application
+
+Resources:
+  UIAppSiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub whispli-challenge-chris-markey
+      AccessControl: PublicRead
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+
+Outputs:
+  WebsiteURL:
+    Value: !GetAtt UIAppSiteBucket.WebsiteURL

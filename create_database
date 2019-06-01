@@ -1,0 +1,6 @@
+#!/bin/sh
+
+echo "Creating database stack"
+aws cloudformation create-stack --stack-name whispli-mysql --template-body file://`pwd`/cloudformation/database.yml
+aws cloudformation wait stack-create-complete --stack-name whispli-mysql
+echo "Database stack ready"

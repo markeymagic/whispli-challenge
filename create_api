@@ -1,0 +1,7 @@
+#!/bin/sh
+
+echo "Creating api stack"
+aws cloudformation create-stack --stack-name whispli-api --capabilities CAPABILITY_IAM --template-body file://`pwd`/cloudformation/api.yml
+aws cloudformation wait stack-create-complete --stack-name whispli-api
+echo "API is ready - the URL for this API is: "
+aws cloudformation describe-stacks --stack-name whispli-fabric | jq '.Stacks[0].Outputs[] | select(.OutputKey=="ExternalUrl") | .OutputValue '

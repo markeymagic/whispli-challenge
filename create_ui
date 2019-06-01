@@ -1,0 +1,8 @@
+#!/bin/sh
+
+echo "Creating UI"
+aws cloudformation create-stack --stack-name whispli-ui --capabilities CAPABILITY_IAM --template-body file://`pwd`/cloudformation/ui.yml
+aws cloudformation wait stack-create-complete --stack-name whispli-ui
+
+echo "UI ready - you can view the UI by navigating to the following URL in a browser:"
+aws cloudformation describe-stacks --stack-name whispli-ui | jq '.Stacks[0].Outputs[] | select(.OutputKey=="WebsiteURL") | .OutputValue '

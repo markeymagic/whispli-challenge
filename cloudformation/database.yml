@@ -1,0 +1,225 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: An RDS database
+
+Parameters:
+  Environment:
+    Type: String
+    Description: The environment to deploy to
+    Default: fabric
+  DBInstanceIdentifier:
+    Type: String
+    Description: Database Name
+    Default: "whispli-demo"
+  DBSize:
+    Type: String
+    Description: Database Size (GB)
+    Default: "10"
+  MultiAzDb:
+    Type: String
+    Description: Is The DB Multi AZ?
+    Default: true
+    AllowedValues:
+    - false
+    - true
+  MasterUsername:
+    Type: String
+    Default: whisplidemo
+  DBInstance:
+    Type: String
+    Description: The size of the required RDS instance
+    Default: db.t2.small
+  MasterUserPassword:
+    Type: String
+    Default: whisplidemo
+
+Resources:
+  Database:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceClass: !Ref DBInstance
+      Engine: mysql
+      EngineVersion: 8.0.15
+      AutoMinorVersionUpgrade: true
+      AllowMajorVersionUpgrade: true
+      MasterUsername: !Ref MasterUsername
+      MasterUserPassword: !Ref MasterUserPassword
+      DBInstanceIdentifier: !Ref DBInstanceIdentifier
+      VPCSecurityGroups: 
+      - !GetAtt DbSecurity.GroupId
+      AllocatedStorage: !Ref DBSize
+      DBSubnetGroupName: !Ref DBGroup
+      MultiAZ: !Ref MultiAzDb
+    
+  DBGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Database Subnet for RDS instance
+      SubnetIds:
+      - Fn::ImportValue: !Join [ ':', [ !Ref 'Environment', 'PrivateSubnetOne' ] ]
+      - Fn::ImportValue: !Join [ ':', [ !Ref 'Environment', 'PrivateSubnetTwo' ] ]
+
+  DbSecurity:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: 
+        Fn::ImportValue: !Sub ${Environment}:VPCId
+      GroupDescription: Ingress for databases
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '3306'
+        ToPort: '3306'
+        CidrIp: 0.0.0.0/0
+ 
+  # DbDns:
+  #   Type: AWS::Route53::RecordSet
+  #   Properties:
+  #     Type: CNAME
+  #     TTL: 300
+  #     ResourceRecords: 
+  #       - !GetAtt Database.Endpoint.Address
+  #     HostedZoneId: 
+  #       Fn::ImportValue: !Sub ${Environment}-PrivateHostedZone
+  #     Name: 
+  #       !Join
+  #       - .
+  #       - - !Sub ${Url}-db
+  #         - Fn::ImportValue: !Sub ${Environment}-InternalDomain
+
+  # Cloud watch alarms
+  # LowCPUAlarmDB:
+  #   Type: AWS::CloudWatch::Alarm
+  #   Properties:
+  #     AlarmDescription: !Sub "${AWS::StackName} - DB Low CPU usage"
+  #     MetricName: CPUUtilization
+  #     Namespace: AWS/RDS
+  #     Statistic: Maximum
+  #     Period: '86400'
+  #     EvaluationPeriods: '1'
+  #     Threshold: '60'
+  #     AlarmActions:
+  #     - Fn::ImportValue: !Sub ${Environment}-CloudWatchAlertsSns
+  #     Dimensions:
+  #     - Name: DBInstanceIdentifier
+  #       Value: !Ref Database
+  #     ComparisonOperator: LessThanOrEqualToThreshold
+
+  HighCPUAlarmDB:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub "${AWS::StackName} - DB High CPU usage"
+      MetricName: CPUUtilization
+      Namespace: AWS/RDS
+      Statistic: Average
+      Period: '300'
+      EvaluationPeriods: '2'
+      Threshold: '80'
+      AlarmActions:
+      - Fn::ImportValue: !Sub ${Environment}:CloudWatchAlertsSns
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value: !Ref Database
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+
+  LowFreeableSpaceAlarmDB:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub "${AWS::StackName} - DB Low Freeable Space"
+      MetricName: FreeStorageSpace
+      Namespace: AWS/RDS
+      Statistic: Average
+      Period: '3600'
+      EvaluationPeriods: '4'
+      Threshold: '1048576000'
+      AlarmActions:
+      - Fn::ImportValue: !Sub ${Environment}:CloudWatchAlertsSns
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value: !Ref Database
+      ComparisonOperator: LessThanOrEqualToThreshold
+
+
+  HighReadLatencyAlarmDB:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub "${AWS::StackName} - DB High Read Latency"
+      MetricName: ReadLatency
+      Namespace: AWS/RDS
+      Statistic: Average
+      Period: '60'
+      EvaluationPeriods: '4'
+      Threshold: '0.008'
+      AlarmActions:
+      - Fn::ImportValue: !Sub ${Environment}:CloudWatchAlertsSns
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value: !Ref Database
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+
+  HighWriteLatencyAlarmDB:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub "${AWS::StackName} - DB High Write Latency"
+      MetricName: WriteLatency
+      Namespace: AWS/RDS
+      Statistic: Average
+      Period: '60'
+      EvaluationPeriods: '4'
+      Threshold: '0.008'
+      AlarmActions:
+      - Fn::ImportValue: !Sub ${Environment}:CloudWatchAlertsSns
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value: !Ref Database
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+
+  UsingSwapAlarmDB:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub "${AWS::StackName} - Database is using swap"
+      MetricName: SwapUsage
+      Namespace: AWS/RDS
+      Statistic: Maximum
+      Period: '60'
+      EvaluationPeriods: '1'
+      Threshold: '1'
+      AlarmActions:
+      - Fn::ImportValue: !Sub ${Environment}:CloudWatchAlertsSns
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value: !Ref Database
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+
+  UsingSwapAlarmDB:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: !Sub "${AWS::StackName} - Database is using swap"
+      MetricName: SwapUsage
+      Namespace: AWS/RDS
+      Statistic: Maximum
+      Period: '60'
+      EvaluationPeriods: '1'
+      Threshold: '1'
+      AlarmActions:
+      - Fn::ImportValue: !Sub ${Environment}:CloudWatchAlertsSns
+      Dimensions:
+      - Name: DBInstanceIdentifier
+        Value: !Ref Database
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+
+Outputs:
+  MasterUsername:
+    Value: !Ref MasterUsername
+    Export:
+      Name: !Join [ ':', [ !Ref 'Environment', 'MasterUsername']]
+  DatabaseName:
+    Value: !Ref DBInstanceIdentifier
+    Export:
+      Name: !Join [ ':', [ !Ref 'Environment', 'DatabaseName']]
+  DatabaseAddress:
+    Value: !GetAtt Database.Endpoint.Address
+    Export:
+      Name: !Join [ ':', [ !Ref 'Environment', 'DatabaseAddress']]
+  MasterUserPassword:
+    Value: !Ref MasterUserPassword
+    Export:
+      Name: !Join [ ':', [ !Ref 'Environment', 'MasterUserPassword']]
