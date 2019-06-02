@@ -27,3 +27,7 @@ The scripts need to be executed in a specific order to satisfy stack dependancie
 The scripts will execute using the default system AWS profile, if you wish to execute into a specific account you can set a new profile using:
 
 export AWS_PROFILE=(profile)
+
+### Caveat
+
+I dont think it is possible to achieve production quality anything without consistent effort and multiple feedback iterations but I think this submission is a good place to start

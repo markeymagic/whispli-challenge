@@ -5,7 +5,7 @@ Parameters:
   Environment:
     Type: String
     Description: The environment to deploy to
-    Default: fabric
+    Default: whispli-fabric
   DBInstanceIdentifier:
     Type: String
     Description: Database Name

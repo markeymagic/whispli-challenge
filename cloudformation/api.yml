@@ -3,7 +3,7 @@ Description: Deploy a service on AWS Fargate, hosted in a private subnet, but ac
 Parameters:
   Environment:
     Type: String
-    Default: fabric
+    Default: whispli-fabric
   ServiceName:
     Type: String
     Default: whispli-demo
